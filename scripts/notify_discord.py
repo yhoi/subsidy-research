@@ -37,7 +37,9 @@ ACCENT_NEW = 0x27AE60      # 新規発見
 
 MAX_DETAIL_ITEMS = 5      # ボタン付きで詳細表示する上限
 MAX_LIST_ITEMS = 8        # 一覧行で流す上限
+MAX_URGENT_ROWS = 6       # 締切間近リストに出す上限
 TEXT_BUDGET = 3600        # components v2 のテキスト合計上限4000に対する安全域
+MAX_COMPONENTS = 36       # components v2 の総数上限40に対する安全域
 
 
 # --- latest.json の読み取り ---------------------------------------------------
@@ -68,12 +70,6 @@ def width(text: str) -> int:
     return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
 
 
-def pad(text: str, cells: int, gap: int = 2) -> str:
-    """列幅 cells に収めたうえで、右側に必ず gap 分の余白を残す。"""
-    text = clip(text, cells - gap)
-    return text + " " * max(gap, cells - width(text))
-
-
 def clip(text: str, cells: int) -> str:
     out = ""
     for c in text:
@@ -94,9 +90,12 @@ def deadline_label(s: dict) -> str:
 
 
 def money_line(s: dict) -> str:
-    """金額と補助率。この2つがこの通知の主役。"""
-    amount = clip(s.get("amount") or "記載なし", 56)
-    rate = clip(s.get("subsidy_rate") or "記載なし", 40)
+    """金額と補助率。この2つがこの通知の主役。
+
+    Discordは通常テキストを折り返すので、途中で切るより全文を出したほうが読める。
+    """
+    amount = clip(s.get("amount") or "記載なし", 120)
+    rate = clip(s.get("subsidy_rate") or "記載なし", 80)
     return f"💰 **{amount}**\n📊 補助率 **{rate}**"
 
 
@@ -106,20 +105,20 @@ def text(content: str) -> dict:
     return {"type": TEXT, "content": content}
 
 
-def separator() -> dict:
-    return {"type": SEPARATOR, "divider": True, "spacing": 1}
+def separator(divider: bool = True, spacing: int = 1) -> dict:
+    return {"type": SEPARATOR, "divider": divider, "spacing": spacing}
 
 
 def item_section(s: dict) -> dict:
     """1案件 = 1セクション。公式サイトはリンクボタンで開かせる。"""
     lines = [
-        f"**{clip(s.get('name') or '(名称不明)', 90)}**",
+        f"**{clip(s.get('name') or '(名称不明)', 120)}**",
         money_line(s),
         f"⏳ 締切 {deadline_label(s)}",
     ]
     meta = [v for v in (s.get("authority"), s.get("region"), s.get("status")) if v]
     if meta:
-        lines.append("🏛 " + clip("　/　".join(meta), 70))
+        lines.append("🏛 " + clip("　/　".join(meta), 90))
 
     block = {"type": SECTION, "components": [text("\n".join(lines))]}
     if s.get("url") and s.get("url_verified"):
@@ -137,29 +136,39 @@ def item_section(s: dict) -> dict:
     return block
 
 
-def deadline_table(items: list[dict]) -> str:
-    """締切間近の一覧。等幅コードブロックで簡易テーブルにする。"""
-    rows = [f"{pad('締切', 13)}{pad('残', 6)}{pad('補助率', 12)}補助金"]
-    rows.append("─" * 48)
-    for s in items:
+def deadline_lines(items: list[dict], limit: int = MAX_URGENT_ROWS) -> str:
+    """締切間近の一覧。
+
+    以前は等幅コードブロックの表にしていたが、Discordはコードブロックを折り返さず
+    横スクロールにするため、ウィンドウ幅によって名称の右側が見えなくなっていた。
+    通常テキストなら折り返されるので、全文が読める形にする。
+    """
+    rows = []
+    for s in items[:limit]:
         d = s["_days_left"]
+        head = [f"**{s.get('deadline') or '未定'}**"]
+        if d is not None:
+            head.append(f"残{d}日")
+        rate = s.get("subsidy_rate")
+        if rate:
+            head.append(f"補助率 {clip(rate, 60)}")
         rows.append(
-            pad(s.get("deadline") or "未定", 13)
-            + pad(f"{d}日" if d is not None else "-", 6)
-            + pad(s.get("subsidy_rate") or "-", 12)
-            + clip(s.get("name") or "", 30)
+            "⏳ " + "　/　".join(head) + "\n"
+            + "　" + clip(s.get("name") or "(名称不明)", 120)
         )
-    return "```\n" + "\n".join(rows) + "\n```"
+    if len(items) > limit:
+        rows.append(f"-# ほか {len(items) - limit} 件")
+    return "\n\n".join(rows)
 
 
 def list_line(s: dict) -> str:
     """ボタンを付けない案件の2行表示。名称を優先し、金額・補助率・締切を下段に置く。"""
     rate = s.get("subsidy_rate") or "記載なし"
-    parts = [f"💰 {clip(s.get('amount') or '記載なし', 30)}"]
+    parts = [f"💰 {clip(s.get('amount') or '記載なし', 96)}"]
     if rate != "記載なし":
-        parts.append(f"📊 {clip(rate, 20)}")
-    parts.append(f"⏳ {clip(deadline_label(s), 26)}")
-    return f"**{clip(s.get('name') or '', 46)}**\n-# " + "　".join(parts)
+        parts.append(f"📊 {clip(rate, 56)}")
+    parts.append(f"⏳ {clip(deadline_label(s), 36)}")
+    return f"**{clip(s.get('name') or '', 100)}**\n-# " + "　".join(parts)
 
 
 # --- 送信 ---------------------------------------------------------------------
@@ -226,29 +235,38 @@ def main(report_path: str) -> None:
     ]
 
     if urgent:
-        children += [separator(), text("**⚠️ 締切間近（2週間以内）**"), text(deadline_table(urgent))]
+        children += [separator(), text("**⚠️ 締切間近（2週間以内）**"), text(deadline_lines(urgent))]
 
     if detail:
         children.append(separator())
         children.append(text("**⭐ 優先して見るべき案件**"))
-        for s in detail:
+        for i, s in enumerate(detail):
+            # 案件同士が地続きだと読めないので、2件目以降は必ず線で区切る
+            if i:
+                children.append(separator())
             children.append(item_section(s))
 
     if overflow:
+        # 1行に詰めず、案件ごとに空行を挟む（"\n\n"）
         rows = [list_line(s) for s in overflow[:MAX_LIST_ITEMS]]
         if len(overflow) > MAX_LIST_ITEMS:
             rows.append(f"-# ほか {len(overflow) - MAX_LIST_ITEMS} 件（詳細はレポート参照）")
-        children += [separator(), text("**📎 その他の注目案件**\n" + "\n".join(rows))]
+        children += [separator(), text("**📎 その他の注目案件**"), text("\n\n".join(rows))]
 
     if not subsidies:
         children.append(text("本日は掲載できる案件がありませんでした。"))
 
-    # テキスト超過時は末尾（重要度の低い順）から削る
-    while total_text(children) > TEXT_BUDGET and len(children) > 3:
+    # テキスト量・コンポーネント数が上限を超える場合は末尾（重要度の低い順）から削る。
+    # 区切り線を入れたぶんコンポーネント数が増えるので、こちらも見る。
+    def over_budget() -> bool:
+        return total_text(children) > TEXT_BUDGET or len(list(walk(children))) > MAX_COMPONENTS
+
+    trimmed = False
+    while over_budget() and len(children) > 3:
         children.pop()
+        trimmed = True
+    if trimmed:
         children.append(text("-# ※ 件数が多いため一部を省略しています"))
-        if total_text(children) > TEXT_BUDGET:
-            children.pop()
 
     accent = ACCENT_URGENT if urgent else (ACCENT_HIGH if high else ACCENT_NEW)
     send(children, accent)
