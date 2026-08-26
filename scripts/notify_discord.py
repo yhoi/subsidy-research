@@ -110,7 +110,12 @@ def separator(divider: bool = True, spacing: int = 1) -> dict:
 
 
 def item_section(s: dict) -> dict:
-    """1案件 = 1セクション。公式サイトはリンクボタンで開かせる。"""
+    """1案件 = 1ブロック。公式サイトはリンクボタンで開かせる。
+
+    注意: components v2 の Section(type 9) は accessory が必須。
+    ボタンを付けられない案件を Section で組むと 400 が返り、通知が丸ごと落ちる。
+    そのため、ボタンが無い場合は素の Text コンポーネントにする。
+    """
     lines = [
         f"**{clip(s.get('name') or '(名称不明)', 120)}**",
         money_line(s),
@@ -120,20 +125,21 @@ def item_section(s: dict) -> dict:
     if meta:
         lines.append("🏛 " + clip("　/　".join(meta), 90))
 
-    block = {"type": SECTION, "components": [text("\n".join(lines))]}
     if s.get("url") and s.get("url_verified"):
-        block["accessory"] = {
-            "type": BUTTON,
-            "style": LINK_STYLE,
-            "label": "公式サイト",
-            "url": s["url"],
+        return {
+            "type": SECTION,
+            "components": [text("\n".join(lines))],
+            "accessory": {
+                "type": BUTTON,
+                "style": LINK_STYLE,
+                "label": "公式サイト",
+                "url": s["url"],
+            },
         }
-    else:
-        # ボタンを付けられない場合もURLは本文に残す（リンク切れは明記）
-        block["components"][0]["content"] += (
-            f"\n🔗 {s['url']}（要確認）" if s.get("url") else "\n🔗 URL不明"
-        )
-    return block
+
+    # ボタンを付けられない場合もURLは本文に残す（リンク切れは明記）
+    lines.append(f"🔗 {s['url']}（要確認）" if s.get("url") else "🔗 URL不明")
+    return text("\n".join(lines))
 
 
 def deadline_lines(items: list[dict], limit: int = MAX_URGENT_ROWS) -> str:
