@@ -36,6 +36,7 @@ LINK_STYLE = 5
 ACCENT_URGENT = 0x8B5CF6   # 締切間近 … バイオレット
 ACCENT_HIGH = 0x38BDF8     # 関連度「高」… スカイブルー
 ACCENT_NEW = 0x34D399      # 新規発見 … エメラルド
+ACCENT_ERROR = 0xEF4444    # 調査失敗 … レッド（平常時に使わない色にして異常を目立たせる）
 
 MAX_DETAIL_ITEMS = 5      # ボタン付きで詳細表示する上限
 MAX_LIST_ITEMS = 8        # 一覧行で流す上限
@@ -51,12 +52,39 @@ def today_jst() -> dt.date:
     return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date()
 
 
-def load(today: dt.date) -> list[dict]:
-    with open(LATEST_JSON, encoding="utf-8") as f:
-        subsidies = json.load(f).get("subsidies", [])
+def read_latest() -> tuple[dict | None, str | None]:
+    """latest.json を読む。読めない・中身が空なら (None, 理由) を返す。
+
+    調査はローカルで走るため、PCが落ちていた・WiFiが無かった等で
+    latest.json が更新されない／壊れることがある。その場合に古い内容を
+    平常運転のように送ってしまうと事故に気づけないので、理由を持ち帰る。
+    """
+    if not os.path.exists(LATEST_JSON):
+        return None, f"`{LATEST_JSON}` が見つかりません"
+    try:
+        with open(LATEST_JSON, encoding="utf-8") as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        return None, f"`{LATEST_JSON}` を読み込めません（JSONが壊れています: {e}）"
+    except OSError as e:
+        return None, f"`{LATEST_JSON}` を開けません（{e}）"
+    if not isinstance(data, dict) or not data.get("subsidies"):
+        return None, "`subsidies` が空です（掲載できる案件が1件もありません）"
+    return data, None
+
+
+def annotate(subsidies: list[dict], today: dt.date) -> list[dict]:
     for s in subsidies:
         s["_days_left"] = days_left(s, today)
     return subsidies
+
+
+def stale_days(data: dict, today: dt.date) -> int | None:
+    """latest.json の survey_date が何日前か。取れなければ None。"""
+    try:
+        return (today - dt.date.fromisoformat(data["survey_date"])).days
+    except (KeyError, TypeError, ValueError):
+        return None
 
 
 def clear_new_flags() -> int:
@@ -244,10 +272,32 @@ def resolve_date(report_path: str | None) -> dt.date:
     return today_jst()
 
 
+def send_failure(reason: str, date: str) -> None:
+    """調査結果が読めない時の通知。平常時と一目で区別できる形で出す。"""
+    send([
+        text(f"## 補助金・助成金 週次調査\n-# {date}"),
+        separator(),
+        text(
+            "**調査結果を取得できませんでした**\n"
+            f"{reason}\n\n"
+            "-# ローカルの定期調査（毎日 4:00 JST）が失敗している可能性があります。\n"
+            "-# `logs/` の実行ログと launchd の状態を確認してください。"
+        ),
+    ], ACCENT_ERROR)
+
+
 def main(report_path: str | None = None, clear_new: bool = False) -> None:
     today = resolve_date(report_path)
     date = today.isoformat()
-    subsidies = load(today)
+
+    data, err = read_latest()
+    if err:
+        print(f"調査結果を取得できません: {err}", file=sys.stderr)
+        send_failure(err, date)
+        return
+
+    subsidies = annotate(data["subsidies"], today)
+    stale = stale_days(data, today)
 
     new_items = [s for s in subsidies if s.get("new_this_survey")]
     urgent = sorted(
@@ -280,6 +330,13 @@ def main(report_path: str | None = None, clear_new: bool = False) -> None:
         ),
     ]
 
+    # 調査が止まっていても通知自体は届いてしまうため、鮮度を明示する
+    if stale is not None and stale >= 1:
+        children.append(text(
+            f"**注意: 調査結果が{stale}日前（{data['survey_date']}）のままです**\n"
+            "-# ローカルの定期調査が動いていない可能性があります。締切の残日数は今日基準で再計算しています。"
+        ))
+
     if urgent:
         children += [separator(), text("**締切間近（2週間以内）**"), text(deadline_lines(urgent))]
 
@@ -298,9 +355,6 @@ def main(report_path: str | None = None, clear_new: bool = False) -> None:
         if len(overflow) > MAX_LIST_ITEMS:
             rows.append(f"-# ほか {len(overflow) - MAX_LIST_ITEMS} 件（詳細はレポート参照）")
         children += [separator(), text("**その他の案件**"), text("\n\n".join(rows))]
-
-    if not subsidies:
-        children.append(text("本日は掲載できる案件がありませんでした。"))
 
     # テキスト量・コンポーネント数が上限を超える場合は末尾（重要度の低い順）から削る。
     # 区切り線を入れたぶんコンポーネント数が増えるので、こちらも見る。
