@@ -8,8 +8,8 @@
 
 - 毎週月曜 **6:30 JST** に自動起動
 - Web検索で新規案件を探し、既存案件の締切・公募状況を再確認
-- 掲載URLの死活確認（リンク切れは除外）
-- 前回結果との差分（🆕新規 / 🔄更新 / ✅終了）をレポート化
+- 掲載URLの死活確認（リンク切れは正しいURLを探し直し、見つからなければ「URL不明」と明記して残す）
+- 前回結果との差分（🆕新規 / 🔄更新 / ✅終了 / 📤スコープ外）をレポート化
 - **Discordに自動通知**（締切間近・関連度「高」・新規発見）
 
 ## 調査対象
@@ -36,7 +36,7 @@
 ```
 📋 補助金・助成金 週次調査
 2026-08-26  会津大学発ベンチャー / 会津・福島県の中小企業
-🆕 新規 2  📌 掲載中 16  ⚠️ 締切2週間以内 4  ⭐ 関連度「高」 7
+🆕 新規 2  📌 掲載中 10  ⚠️ 締切2週間以内 2  ⭐ 関連度「高」 4
 ────────────────────────────
 ⚠️ 締切間近（2週間以内）
 ⏳ 2026-08-31 / 残5日 / 補助率 1/2以内
@@ -88,15 +88,22 @@ logs/                              # 実行ログ（git管理外）
 
 ## セットアップ
 
+前提: [Claude Code](https://claude.com/claude-code) の `claude` コマンドと `gh` CLI が使えること。
+
 ```sh
 # 1. Discord Webhook を Secrets に登録
-gh secret set DISCORD_WEBHOOK_URL --repo yhoi/subsidy-research
+gh secret set DISCORD_WEBHOOK_URL --repo <owner>/<repo>
 
-# 2. 定期実行を登録（macOS / launchd）
+# 2. 手動実行して動作確認（先にこれで通ることを確かめる）
+./scripts/run-daily-research.sh
+
+# 3. 定期実行を登録（macOS / launchd）
+sed "s|__REPO_DIR__|$(pwd)|g" launchd/com.yhoi.subsidy-research.plist.sample \
+  > ~/Library/LaunchAgents/com.yhoi.subsidy-research.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yhoi.subsidy-research.plist
 
-# 3. 手動実行して動作確認
-./scripts/run-daily-research.sh
+# 登録できたか確認
+launchctl list | grep subsidy-research
 ```
 
 ## メモ
@@ -104,5 +111,5 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yhoi.subsidy-researc
 - 通知は **1回の調査につき1通**。連投すると読まれなくなるため、件数が多い日は表示を圧縮します
 - GitHubのレポートリンクは貼りません（Discord上で完結して読める形式）
 - 各案件の「公式サイト」ボタンは、URLの死活確認に成功した案件にのみ付きます
-- 同日中に再実行しても、その日のレポートが既にあれば何もしません（冪等）
-- 関連リポジトリと実行時刻: `pignet-subsidy-research` 毎日6:00 / **本リポジトリ 毎週月曜6:30** / `pignet-competitor-research` 毎日7:00
+- 同日中に再実行しても、その日のレポートが既にあれば何もしません（冪等）。**同じ日に作り直したい場合は `reports/YYYY-MM-DD.md` を退避してから実行してください**
+- `prompts/` と `scripts/` のファイル名が `daily-` で始まるのは日次運用だった名残です（現在は週次）

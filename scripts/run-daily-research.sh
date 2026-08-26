@@ -4,16 +4,18 @@
 
 set -uo pipefail
 
-SR_DIR="/Users/yamashitayuuya/product/subsidy-research"
+# 配置場所に依存しないよう、リポジトリ位置はスクリプト自身から解決する
+SR_DIR="${SR_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 LOG_DIR="${SR_DIR}/logs"
 PROMPT_FILE="${SR_DIR}/prompts/daily-research-prompt.md"
-CLAUDE_BIN="/Users/yamashitayuuya/.local/bin/claude"
 RUN_LOG="${LOG_DIR}/run-$(date +%Y-%m-%d).log"
 
 mkdir -p "${LOG_DIR}"
 
 # パス確保: launchdは最小PATHで起動するため node/npm が見えない
-export PATH="/opt/homebrew/bin:/usr/local/bin:/Users/yamashitayuuya/.local/bin:${PATH}"
+export PATH="/opt/homebrew/bin:/usr/local/bin:${HOME}/.local/bin:${PATH}"
+
+CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude || echo "${HOME}/.local/bin/claude")}"
 
 {
   echo "===== $(date '+%Y-%m-%d %H:%M:%S %Z') run start ====="

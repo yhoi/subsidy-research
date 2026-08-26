@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  毎週月曜 6:30 JST に週次調査を実行する launchd 定義のサンプル。
+  __REPO_DIR__ をこのリポジトリの絶対パスに置換してから
+  ~/Library/LaunchAgents/ へ配置する。手順は README を参照。
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.yhoi.subsidy-research</string>
+
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/zsh</string>
+		<string>__REPO_DIR__/scripts/run-daily-research.sh</string>
+	</array>
+
+	<!-- Weekday 1 = 月曜。システムのタイムゾーンで解釈される -->
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Weekday</key>
+		<integer>1</integer>
+		<key>Hour</key>
+		<integer>6</integer>
+		<key>Minute</key>
+		<integer>30</integer>
+	</dict>
+
+	<!-- 読み込み時には走らせない（起動のたびに調査が動くのを防ぐ） -->
+	<key>RunAtLoad</key>
+	<false/>
+
+	<key>StandardOutPath</key>
+	<string>__REPO_DIR__/logs/launchd-stdout.log</string>
+	<key>StandardErrorPath</key>
+	<string>__REPO_DIR__/logs/launchd-stderr.log</string>
+</dict>
+</plist>
