@@ -19,7 +19,7 @@
 | `id` | string | ✅ | 案件の一意キー。日をまたいで**変えない**（差分検知の軸） |
 | `name` | string | ✅ | 補助金・助成金の正式名称 |
 | `authority` | string | ✅ | 管轄（省庁・自治体・実施団体） |
-| `region` | string | ✅ | 会津若松市 / 福島県 / 東北 / 全国 など |
+| `region` | string | ✅ | 会津 / 会津若松市 / 福島県 / 東北 など |
 | `summary` | string | ✅ | 1〜2文の概要 |
 | `amount` | string | ✅ | **補助額**。例: `上限500万円`（通知の主役その1） |
 | `subsidy_rate` | string | ✅ | **補助率**。例: `2/3`, `1/2（小規模事業者は2/3）`（通知の主役その2） |
@@ -30,7 +30,7 @@
 | `relevance` | `"高"` \| `"中"` \| `"低"` | ✅ | 関連度。`高` は通知で常に詳細表示される |
 | `relevance_reason` | string | ✅ | なぜその関連度なのか |
 | `status` | string | ✅ | `公募中` / `公募開始待ち` / `結果発表待ち` など |
-| `category` | string | ✅ | IT導入・AI/DX、研究開発、地域活性化 など |
+| `category` | string | ✅ | 会津地域 / 福島県 / 広域 など（調査の重点3カテゴリに対応）|
 | `new_this_survey` | boolean | – | **今回新規に見つけた案件だけ** `true`。前回分は毎回必ず外す |
 
 ## 通知側が使う項目
@@ -46,27 +46,27 @@
 ```json
 {
   "survey_date": "2026-08-26",
-  "company": "会津大学発ベンチャー（会津若松市・AI/DeepTech系スタートアップ）",
+  "company": "会津大学発ベンチャー（会津若松市の中小企業）",
   "subsidies": [
     {
-      "id": "nedo-dtsu-10",
-      "name": "NEDO ディープテック・スタートアップ支援事業（DTSU）第10回",
-      "authority": "NEDO",
-      "region": "全国",
-      "summary": "研究開発型スタートアップの実用化開発を支援する大型公募。",
-      "amount": "上限5億円（STS期）",
-      "subsidy_rate": "2/3以内",
-      "deadline": "2026-09-08",
-      "deadline_note": "第10回公募の締切。次回は未公表。",
-      "url": "https://www.nedo.go.jp/",
+      "id": "aizu-stepup-r8-2",
+      "name": "会津若松市 ステップアップ応援補助金（令和8年度 第2回公募）",
+      "authority": "会津若松市 商工課",
+      "region": "会津",
+      "summary": "市内での新規出店・事業拡大に要する経費を支援する市の独自制度。",
+      "amount": "新規出店事業：中心市街地 創業者200万円／既存事業者250万円",
+      "subsidy_rate": "1/2以内",
+      "deadline": "2026-08-31",
+      "deadline_note": "第2回公募の締切。第3回の有無は未公表。",
+      "url": "https://www.city.aizuwakamatsu.fukushima.jp/",
       "url_verified": true,
       "relevance": "高",
-      "relevance_reason": "会津大学発のDeepTech系法人が主対象。",
+      "relevance_reason": "会津若松市に拠点を置く中小企業が申請主体になれる。",
       "status": "公募中",
-      "category": "研究開発・DeepTech",
+      "category": "会津地域",
       "new_this_survey": true
     }
   ],
-  "notes": ["IT導入補助金5次締切の日程は未公表。翌日以降に再確認。"]
+  "notes": ["ふくしま産業応援ファンドの上限額が公式ページ本文に未記載。翌週に再確認。"]
 }
 ```

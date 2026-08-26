@@ -236,7 +236,7 @@ def main(report_path: str) -> None:
     children: list[dict] = [
         text(
             "## 📋 補助金・助成金 週次調査\n"
-            f"-# {date}　会津大学発ベンチャー / 会津・福島・東北・DeepTech・全国中小企業"
+            f"-# {date}　会津大学発ベンチャー / 会津・福島県の中小企業"
         ),
         text(
             f"🆕 新規 **{len(new_items)}**　"
