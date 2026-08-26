@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""reports/latest.json を読み、日次調査の結果を Discord に通知する。
+"""reports/latest.json を読み、週次調査の結果を Discord に通知する。
 
 GitHub Actions（.github/workflows/discord-notify.yml）から呼ばれる。
 入出力の契約:
@@ -223,7 +223,7 @@ def main(report_path: str) -> None:
 
     children: list[dict] = [
         text(
-            "## 📋 補助金・助成金 日次調査\n"
+            "## 📋 補助金・助成金 週次調査\n"
             f"-# {date}　会津大学発ベンチャー / 会津・福島・東北・DeepTech・全国中小企業"
         ),
         text(

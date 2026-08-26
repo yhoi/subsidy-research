@@ -1,6 +1,6 @@
 # reports/latest.json スキーマ
 
-日次調査の**状態を持つ唯一のファイル**。調査エージェントが書き、Discord通知スクリプトが読む。
+週次調査の**状態を持つ唯一のファイル**。調査エージェントが書き、Discord通知スクリプトが読む。
 両者の契約なので、**項目名を変える時はこのドキュメントと `scripts/notify_discord.py` を必ず一緒に直す。**
 
 ## トップレベル
@@ -9,7 +9,7 @@
 |---|---|---|
 | `survey_date` | string (`YYYY-MM-DD`) | この調査を実施した日 |
 | `company` | string | 想定する申請主体の属性 |
-| `subsidies` | array | 掲載中の案件。**終了した案件は配列から削除**（記録は日次レポートに残す） |
+| `subsidies` | array | 掲載中の案件。**終了した案件は配列から削除**（記録は調査レポートに残す） |
 | `notes` | array of string | 翌日以降に持ち越す宿題・Watch事項 |
 
 ## subsidies[] の各案件

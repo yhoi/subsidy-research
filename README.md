@@ -1,12 +1,12 @@
 # subsidy-research
 
-会津大学発ベンチャー／会津・福島拠点のテック系スタートアップ向けに、申請可能な補助金・助成金を **AIエージェントが毎朝自動で調査** し、差分を Discord に通知するリポジトリです。
+会津大学発ベンチャー／会津・福島拠点のテック系スタートアップ向けに、申請可能な補助金・助成金を **AIエージェントが毎週自動で調査** し、差分を Discord に通知するリポジトリです。
 
 ---
 
 ## 何をするもの？
 
-- 毎朝 **6:30 JST** に自動起動
+- 毎週月曜 **6:30 JST** に自動起動
 - Web検索で新規案件を探し、既存案件の締切・公募状況を再確認
 - 掲載URLの死活確認（リンク切れは除外）
 - 前回結果との差分（🆕新規 / 🔄更新 / ✅終了）をレポート化
@@ -29,7 +29,7 @@
 **1日1通だけ**投稿します。補助額と補助率を最上段に置き、公式サイトはボタンで開けます。
 
 ```
-📋 補助金・助成金 日次調査
+📋 補助金・助成金 週次調査
 2026-08-26  会津大学発ベンチャー / 会津・福島・東北・DeepTech・全国中小企業
 🆕 新規 2  📌 掲載中 16  ⚠️ 締切2週間以内 4  ⭐ 関連度「高」 7
 ────────────────────────────
@@ -52,7 +52,7 @@
 ## 仕組み
 
 ```
-launchd（毎朝6:30 JST）
+launchd（毎週月曜6:30 JST）
    └─ scripts/run-daily-research.sh
         └─ claude -p  ←  prompts/daily-research-prompt.md
              ├─ Web検索・URL死活確認・差分検知
@@ -69,7 +69,7 @@ scripts/
   └── notify_discord.py            # latest.json → Discord通知の組み立て
 reports/
   ├── latest.json                  # 最新の調査結果（差分検知の基準）
-  └── YYYY-MM-DD.md                # 日次レポート
+  └── YYYY-MM-DD.md                # 調査レポート
 docs/latest-json.md                # latest.json のスキーマ定義
 .github/workflows/discord-notify.yml  # push検知で notify_discord.py を実行
 logs/                              # 実行ログ（git管理外）
@@ -97,4 +97,4 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yhoi.subsidy-researc
 - GitHubのレポートリンクは貼りません（Discord上で完結して読める形式）
 - 各案件の「公式サイト」ボタンは、URLの死活確認に成功した案件にのみ付きます
 - 同日中に再実行しても、その日のレポートが既にあれば何もしません（冪等）
-- 関連リポジトリと実行時刻: `pignet-subsidy-research` 6:00 / **本リポジトリ 6:30** / `pignet-competitor-research` 7:00
+- 関連リポジトリと実行時刻: `pignet-subsidy-research` 毎日6:00 / **本リポジトリ 毎週月曜6:30** / `pignet-competitor-research` 毎日7:00

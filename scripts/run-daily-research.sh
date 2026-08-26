@@ -1,5 +1,5 @@
 #!/bin/zsh
-# launchd から 6:30 JST に呼ばれる、日次補助金調査実行スクリプト
+# launchd から毎週月曜 6:30 JST に呼ばれる、週次補助金調査実行スクリプト
 # 詳細プロンプト: ../prompts/daily-research-prompt.md
 
 set -uo pipefail
