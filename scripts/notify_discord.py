@@ -31,9 +31,11 @@ IS_COMPONENTS_V2 = 1 << 15
 CONTAINER, SECTION, TEXT, SEPARATOR, BUTTON = 17, 9, 10, 14, 2
 LINK_STYLE = 5
 
-ACCENT_URGENT = 0xE74C3C   # 締切間近
-ACCENT_HIGH = 0x2E86DE     # 関連度「高」
-ACCENT_NEW = 0x27AE60      # 新規発見
+# 左端のアクセントバーの色。状態を色で示すため3色を使い分ける。
+# 彩度・明度を揃えた寒色系でまとめ、週次で見ても疲れないトーンにしている。
+ACCENT_URGENT = 0x8B5CF6   # 締切間近 … バイオレット
+ACCENT_HIGH = 0x38BDF8     # 関連度「高」… スカイブルー
+ACCENT_NEW = 0x34D399      # 新規発見 … エメラルド
 
 MAX_DETAIL_ITEMS = 5      # ボタン付きで詳細表示する上限
 MAX_LIST_ITEMS = 8        # 一覧行で流す上限
