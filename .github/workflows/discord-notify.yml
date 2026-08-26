@@ -1,0 +1,126 @@
+name: Discord Notification on Report Update
+
+on:
+  push:
+    paths:
+      - 'reports/*.md'
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Get new/changed report files
+        id: reports
+        run: |
+          FILES=$(git diff --name-only HEAD~1 HEAD -- 'reports/*.md' | head -1)
+          echo "file=$FILES" >> $GITHUB_OUTPUT
+
+      - name: Build and send Discord notification
+        if: steps.reports.outputs.file != ''
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          FILE: ${{ steps.reports.outputs.file }}
+        run: |
+          python3 << 'PYEOF'
+          import datetime, json, os, sys, time, urllib.error, urllib.request
+
+          file_path = os.environ['FILE']
+          date = os.path.basename(file_path).replace('.md', '')
+          webhook = os.environ['DISCORD_WEBHOOK']
+
+          with open('reports/latest.json') as f:
+              data = json.load(f)
+
+          subsidies = data.get('subsidies', [])
+          new_items = [s for s in subsidies if s.get('new_this_survey')]
+          today = datetime.date.fromisoformat(date)
+
+          def days_left(s):
+              dl = s.get('deadline')
+              if not dl:
+                  return None
+              try:
+                  return (datetime.date.fromisoformat(dl) - today).days
+              except ValueError:
+                  return None
+
+          def line(s):
+              parts = []
+              d = days_left(s)
+              if s.get('deadline') and d is not None and d >= 0:
+                  parts.append(f"締切 {s['deadline']}（残{d}日）")
+              elif s.get('deadline_note'):
+                  parts.append(f"締切 {s['deadline_note'].split('。')[0][:40]}")
+              if s.get('amount'):
+                  parts.append(f"補助額 {s['amount'][:40]}")
+              if s.get('status'):
+                  parts.append(f"状況 {s['status'][:30]}")
+              body = f"**{s.get('name','(名称不明)')}**\n" + "　/　".join(parts[:3])
+              if s.get('authority'):
+                  body += f"\n管轄: {s['authority'][:40]}"
+              return body
+
+          high = sorted(
+              [s for s in subsidies if s.get('relevance') == '高'],
+              key=lambda s: days_left(s) if days_left(s) is not None else 9999,
+          )
+          urgent = [s for s in subsidies if (days_left(s) is not None and 0 <= days_left(s) <= 14)]
+          urgent.sort(key=days_left)
+
+          blocks = []
+          blocks.append(
+              f"📋 **補助金・助成金 日次調査レポート**\n"
+              f"{date}　|　会津大学発ベンチャー / 会津・福島・東北・DeepTech・全国中小企業\n"
+              f"🆕 新規 **{len(new_items)}件**　|　📌 掲載中 **{len(subsidies)}件**　|　⚠️ 締切2週間以内 **{len(urgent)}件**"
+          )
+
+          if urgent:
+              blocks.append("⚠️ **終了間近（2週間以内）**\n\n" + "\n\n".join(line(s) for s in urgent[:8]))
+
+          if high:
+              blocks.append("⭐ **関連度「高」**\n\n" + "\n\n".join(line(s) for s in high[:8]))
+
+          rest = [s for s in new_items if s.get('relevance') != '高']
+          if rest:
+              blocks.append("🆕 **新規発見**\n\n" + "\n\n".join(line(s) for s in rest[:8]))
+
+          if not urgent and not high and not new_items:
+              blocks.append("本日は新規・関連度「高」・締切間近の案件はありませんでした。")
+
+          def chunks(text, limit=1900):
+              out, buf = [], ""
+              for para in text.split("\n\n"):
+                  candidate = para if not buf else buf + "\n\n" + para
+                  if len(candidate) > limit:
+                      if buf:
+                          out.append(buf)
+                      buf = para[:limit]
+                  else:
+                      buf = candidate
+              if buf:
+                  out.append(buf)
+              return out
+
+          messages = [c for b in blocks for c in chunks(b)]
+
+          for i, msg in enumerate(messages):
+              payload = {"content": msg, "allowed_mentions": {"parse": []}}
+              req = urllib.request.Request(
+                  webhook,
+                  data=json.dumps(payload).encode('utf-8'),
+                  headers={'Content-Type': 'application/json', 'User-Agent': 'subsidy-research-bot'},
+              )
+              try:
+                  with urllib.request.urlopen(req) as resp:
+                      print(f"Discord response {i+1}/{len(messages)}: {resp.status}")
+              except urllib.error.HTTPError as e:
+                  print(f"Discord error: {e.code} {e.read().decode()}", file=sys.stderr)
+                  raise
+              time.sleep(1)
+          PYEOF
