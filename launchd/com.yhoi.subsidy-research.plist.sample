@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  毎週月曜 6:30 JST に週次調査を実行する launchd 定義のサンプル。
+  毎日 6:30 JST に調査を実行する launchd 定義のサンプル。
+  Discordへの通知はGitHub Actions側（毎週月曜）が担当する。
   __REPO_DIR__ をこのリポジトリの絶対パスに置換してから
   ~/Library/LaunchAgents/ へ配置する。手順は README を参照。
 -->
@@ -13,14 +14,12 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>/bin/zsh</string>
-		<string>__REPO_DIR__/scripts/run-weekly-research.sh</string>
+		<string>__REPO_DIR__/scripts/run-research.sh</string>
 	</array>
 
-	<!-- Weekday 1 = 月曜。システムのタイムゾーンで解釈される -->
+	<!-- 毎日。システムのタイムゾーンで解釈される -->
 	<key>StartCalendarInterval</key>
 	<dict>
-		<key>Weekday</key>
-		<integer>1</integer>
 		<key>Hour</key>
 		<integer>6</integer>
 		<key>Minute</key>

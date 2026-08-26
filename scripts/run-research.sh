@@ -1,13 +1,13 @@
 #!/bin/zsh
 # launchd から毎週月曜 6:30 JST に呼ばれる、週次補助金調査実行スクリプト
-# 詳細プロンプト: ../prompts/weekly-research-prompt.md
+# 詳細プロンプト: ../prompts/research-prompt.md
 
 set -uo pipefail
 
 # 配置場所に依存しないよう、リポジトリ位置はスクリプト自身から解決する
 SR_DIR="${SR_DIR:-$(cd "$(dirname "$0")/.." && pwd)}"
 LOG_DIR="${SR_DIR}/logs"
-PROMPT_FILE="${SR_DIR}/prompts/weekly-research-prompt.md"
+PROMPT_FILE="${SR_DIR}/prompts/research-prompt.md"
 RUN_LOG="${LOG_DIR}/run-$(date +%Y-%m-%d).log"
 
 mkdir -p "${LOG_DIR}"

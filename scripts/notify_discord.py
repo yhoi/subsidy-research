@@ -46,12 +46,36 @@ MAX_COMPONENTS = 36       # components v2 の総数上限40に対する安全域
 
 # --- latest.json の読み取り ---------------------------------------------------
 
+def today_jst() -> dt.date:
+    """実行環境のTZに依存せずJSTの今日を返す（GitHub ActionsのランナーはUTC）。"""
+    return (dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=9)).date()
+
+
 def load(today: dt.date) -> list[dict]:
     with open(LATEST_JSON, encoding="utf-8") as f:
         subsidies = json.load(f).get("subsidies", [])
     for s in subsidies:
         s["_days_left"] = days_left(s, today)
     return subsidies
+
+
+def clear_new_flags() -> int:
+    """通知済みの「新規」フラグを落とす。
+
+    ローカルの日次調査はフラグを積むだけにしてあるので、送信したこの時点で
+    まとめて外す。次の通知までに見つかったものが、また新規として溜まる。
+    """
+    with open(LATEST_JSON, encoding="utf-8") as f:
+        data = json.load(f)
+    cleared = 0
+    for s in data.get("subsidies", []):
+        if s.pop("new_this_survey", None):
+            cleared += 1
+    if cleared:
+        with open(LATEST_JSON, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+    return cleared
 
 
 def days_left(s: dict, today: dt.date) -> int | None:
@@ -210,9 +234,19 @@ def walk(children: list[dict]):
         yield from walk(c.get("components", []))
 
 
-def main(report_path: str) -> None:
-    date = os.path.basename(report_path).replace(".md", "")
-    today = dt.date.fromisoformat(date)
+def resolve_date(report_path: str | None) -> dt.date:
+    """日付はレポートのファイル名から取る。無指定・不正ならJSTの今日。"""
+    if report_path:
+        try:
+            return dt.date.fromisoformat(os.path.basename(report_path).replace(".md", ""))
+        except ValueError:
+            pass
+    return today_jst()
+
+
+def main(report_path: str | None = None, clear_new: bool = False) -> None:
+    today = resolve_date(report_path)
+    date = today.isoformat()
     subsidies = load(today)
 
     new_items = [s for s in subsidies if s.get("new_this_survey")]
@@ -283,6 +317,10 @@ def main(report_path: str) -> None:
     accent = ACCENT_URGENT if urgent else (ACCENT_HIGH if high else ACCENT_NEW)
     send(children, accent)
 
+    if clear_new:
+        print(f"新規フラグを{clear_new_flags()}件クリアしました")
+
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    args = [a for a in sys.argv[1:] if a != "--clear-new"]
+    main(args[0] if args else None, clear_new="--clear-new" in sys.argv[1:])

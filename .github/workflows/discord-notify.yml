@@ -1,28 +1,60 @@
-name: Discord Notification on Report Update
+name: Discord通知
+
+# 調査そのものはローカル（launchd）で毎日走り、reports/latest.json を更新し続ける。
+# このワークフローは「溜まった latest.json を定期的にDiscordへ送るだけ」を担う。
+# 送信をGitHub側に置くことで、ローカルPCが落ちていてもWiFiが無くても通知は必ず出る。
+#
+# 注意: cron は UTC。21:30 UTC = 翌日 6:30 JST。
+# GitHub の scheduled workflow は混雑時に数十分遅れることがある（時刻厳密ではない）。
 
 on:
-  push:
-    paths:
-      - 'reports/*.md'
-    branches:
-      - main
+  schedule:
+    # 毎週月曜 6:30 JST（= 日曜 21:30 UTC）
+    - cron: "30 21 * * 0"
+  workflow_dispatch:
+    inputs:
+      clear_new:
+        description: 送信後に「新規」フラグを消す
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: discord-notify
+  cancel-in-progress: false
 
 jobs:
   notify:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
 
-      - name: 追加されたレポートを特定
-        id: report
-        run: |
-          FILE=$(git diff --name-only HEAD~1 HEAD -- 'reports/*.md' | head -1)
-          echo "file=$FILE" >> "$GITHUB_OUTPUT"
-
-      - name: Discordに通知
-        if: steps.report.outputs.file != ''
+      - name: Discordに送信
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: python3 scripts/notify_discord.py "${{ steps.report.outputs.file }}"
+          # 手動実行でオフにした時だけ false。定期実行では常にクリアする。
+          CLEAR_NEW: ${{ github.event_name != 'workflow_dispatch' || inputs.clear_new }}
+        run: |
+          set -euo pipefail
+          # 引数なし = latest.json をそのまま送る（日付はJSTの今日を使う）
+          if [ "$CLEAR_NEW" = "true" ]; then
+            python3 scripts/notify_discord.py --clear-new
+          else
+            python3 scripts/notify_discord.py
+          fi
+
+      - name: クリアした新規フラグをコミット
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- reports/latest.json; then
+            echo "latest.json に変更なし"
+            exit 0
+          fi
+          git config user.name "yhoi"
+          git config user.email "ddmmmktennis@gmail.com"
+          git add reports/latest.json
+          git commit -m "chore: 通知済みの新規フラグをクリア"
+          git push
