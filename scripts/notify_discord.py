@@ -215,11 +215,15 @@ def main(report_path: str) -> None:
     high = sorted([s for s in subsidies if s.get("relevance") == "高"], key=by_deadline)
 
     # 詳細（ボタン付き）は「締切間近 → 関連度高 → 新規」の優先順で上位のみ
-    detail: list[dict] = []
+    highlighted: list[dict] = []
     for s in urgent + high + new_items:
-        if s not in detail:
-            detail.append(s)
-    detail, overflow = detail[:MAX_DETAIL_ITEMS], detail[MAX_DETAIL_ITEMS:]
+        if s not in highlighted:
+            highlighted.append(s)
+    detail, overflow = highlighted[:MAX_DETAIL_ITEMS], highlighted[MAX_DETAIL_ITEMS:]
+
+    # 注目枠（締切間近・関連度高・新規）に入らなかった案件も一覧の対象にする。
+    # 以前はここで落ちた案件が件数にも出ず、ヘッダの「掲載中 N」と表示数が食い違っていた。
+    overflow += sorted((s for s in subsidies if s not in highlighted), key=by_deadline)
 
     children: list[dict] = [
         text(
