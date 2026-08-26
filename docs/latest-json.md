@@ -16,21 +16,21 @@
 
 | キー | 型 | 必須 | 説明 |
 |---|---|:--:|---|
-| `id` | string | ✅ | 案件の一意キー。日をまたいで**変えない**（差分検知の軸） |
-| `name` | string | ✅ | 補助金・助成金の正式名称 |
-| `authority` | string | ✅ | 管轄（省庁・自治体・実施団体） |
-| `region` | string | ✅ | 会津 / 会津若松市 / 福島県 / 東北 など |
-| `summary` | string | ✅ | 1〜2文の概要 |
-| `amount` | string | ✅ | **補助額**。例: `上限500万円`（通知の主役その1） |
-| `subsidy_rate` | string | ✅ | **補助率**。例: `2/3`, `1/2（小規模事業者は2/3）`（通知の主役その2） |
-| `deadline` | string \| null | ✅ | 締切。ISO日付。未確定なら `null` |
-| `deadline_note` | string | ✅ | 締切の補足。未確定の理由や次回公募の見込み |
-| `url` | string | ✅ | 公式ページのURL |
-| `url_verified` | boolean | ✅ | 死活確認で200だったか。`true` の時だけ通知に「公式サイト」ボタンが付く |
-| `relevance` | `"高"` \| `"中"` \| `"低"` | ✅ | 関連度。`高` は通知で常に詳細表示される |
-| `relevance_reason` | string | ✅ | なぜその関連度なのか |
-| `status` | string | ✅ | `公募中` / `公募開始待ち` / `結果発表待ち` など |
-| `category` | string | ✅ | 会津地域 / 福島県 / 広域 など（調査の重点3カテゴリに対応）|
+| `id` | string | ○ | 案件の一意キー。日をまたいで**変えない**（差分検知の軸） |
+| `name` | string | ○ | 補助金・助成金の正式名称 |
+| `authority` | string | ○ | 管轄（省庁・自治体・実施団体） |
+| `region` | string | ○ | 会津 / 会津若松市 / 福島県 / 東北 など |
+| `summary` | string | ○ | 1〜2文の概要 |
+| `amount` | string | ○ | **補助額**。例: `上限500万円`（通知の主役その1） |
+| `subsidy_rate` | string | ○ | **補助率**。例: `2/3`, `1/2（小規模事業者は2/3）`（通知の主役その2） |
+| `deadline` | string \| null | ○ | 締切。ISO日付。未確定なら `null` |
+| `deadline_note` | string | ○ | 締切の補足。未確定の理由や次回公募の見込み |
+| `url` | string | ○ | 公式ページのURL |
+| `url_verified` | boolean | ○ | 死活確認で200だったか。`true` の時だけ通知に「公式サイト」ボタンが付く |
+| `relevance` | `"高"` \| `"中"` \| `"低"` | ○ | 関連度。`高` は通知で常に詳細表示される |
+| `relevance_reason` | string | ○ | なぜその関連度なのか |
+| `status` | string | ○ | `公募中` / `公募開始待ち` / `結果発表待ち` など |
+| `category` | string | ○ | 会津地域 / 福島県 / 広域 など（調査の重点3カテゴリに対応）|
 | `new_this_survey` | boolean | – | **今回新規に見つけた案件だけ** `true`。前回分は毎回必ず外す |
 
 ## 通知側が使う項目

@@ -98,7 +98,7 @@ def money_line(s: dict) -> str:
     """
     amount = clip(s.get("amount") or "記載なし", 120)
     rate = clip(s.get("subsidy_rate") or "記載なし", 80)
-    return f"💰 **{amount}**\n📊 補助率 **{rate}**"
+    return f"補助額　**{amount}**\n補助率　**{rate}**"
 
 
 # --- コンポーネント構築 -------------------------------------------------------
@@ -121,11 +121,11 @@ def item_section(s: dict) -> dict:
     lines = [
         f"**{clip(s.get('name') or '(名称不明)', 120)}**",
         money_line(s),
-        f"⏳ 締切 {deadline_label(s)}",
+        f"締切　{deadline_label(s)}",
     ]
     meta = [v for v in (s.get("authority"), s.get("region"), s.get("status")) if v]
     if meta:
-        lines.append("🏛 " + clip("　/　".join(meta), 90))
+        lines.append("管轄　" + clip("　/　".join(meta), 90))
 
     if s.get("url") and s.get("url_verified"):
         return {
@@ -140,7 +140,7 @@ def item_section(s: dict) -> dict:
         }
 
     # ボタンを付けられない場合もURLは本文に残す（リンク切れは明記）
-    lines.append(f"🔗 {s['url']}（要確認）" if s.get("url") else "🔗 URL不明")
+    lines.append(f"URL　{s['url']}（要確認）" if s.get("url") else "URL　不明")
     return text("\n".join(lines))
 
 
@@ -161,7 +161,7 @@ def deadline_lines(items: list[dict], limit: int = MAX_URGENT_ROWS) -> str:
         if rate:
             head.append(f"補助率 {clip(rate, 60)}")
         rows.append(
-            "⏳ " + "　/　".join(head) + "\n"
+            "　/　".join(head) + "\n"
             + "　" + clip(s.get("name") or "(名称不明)", 120)
         )
     if len(items) > limit:
@@ -172,11 +172,11 @@ def deadline_lines(items: list[dict], limit: int = MAX_URGENT_ROWS) -> str:
 def list_line(s: dict) -> str:
     """ボタンを付けない案件の2行表示。名称を優先し、金額・補助率・締切を下段に置く。"""
     rate = s.get("subsidy_rate") or "記載なし"
-    parts = [f"💰 {clip(s.get('amount') or '記載なし', 96)}"]
+    parts = [f"補助額 {clip(s.get('amount') or '記載なし', 96)}"]
     if rate != "記載なし":
-        parts.append(f"📊 {clip(rate, 56)}")
-    parts.append(f"⏳ {clip(deadline_label(s), 36)}")
-    return f"**{clip(s.get('name') or '', 100)}**\n-# " + "　".join(parts)
+        parts.append(f"補助率 {clip(rate, 56)}")
+    parts.append(f"締切 {clip(deadline_label(s), 36)}")
+    return f"**{clip(s.get('name') or '', 100)}**\n-# " + "　/　".join(parts)
 
 
 # --- 送信 ---------------------------------------------------------------------
@@ -235,23 +235,23 @@ def main(report_path: str) -> None:
 
     children: list[dict] = [
         text(
-            "## 📋 補助金・助成金 週次調査\n"
+            "## 補助金・助成金 週次調査\n"
             f"-# {date}　会津大学発ベンチャー / 会津・福島県の中小企業"
         ),
         text(
-            f"🆕 新規 **{len(new_items)}**　"
-            f"📌 掲載中 **{len(subsidies)}**　"
-            f"⚠️ 締切2週間以内 **{len(urgent)}**　"
-            f"⭐ 関連度「高」 **{len(high)}**"
+            f"新規 **{len(new_items)}**　/　"
+            f"掲載中 **{len(subsidies)}**　/　"
+            f"締切2週間以内 **{len(urgent)}**　/　"
+            f"関連度「高」 **{len(high)}**"
         ),
     ]
 
     if urgent:
-        children += [separator(), text("**⚠️ 締切間近（2週間以内）**"), text(deadline_lines(urgent))]
+        children += [separator(), text("**締切間近（2週間以内）**"), text(deadline_lines(urgent))]
 
     if detail:
         children.append(separator())
-        children.append(text("**⭐ 優先して見るべき案件**"))
+        children.append(text("**優先して見るべき案件**"))
         for i, s in enumerate(detail):
             # 案件同士が地続きだと読めないので、2件目以降は必ず線で区切る
             if i:
@@ -263,7 +263,7 @@ def main(report_path: str) -> None:
         rows = [list_line(s) for s in overflow[:MAX_LIST_ITEMS]]
         if len(overflow) > MAX_LIST_ITEMS:
             rows.append(f"-# ほか {len(overflow) - MAX_LIST_ITEMS} 件（詳細はレポート参照）")
-        children += [separator(), text("**📎 その他の注目案件**"), text("\n\n".join(rows))]
+        children += [separator(), text("**その他の案件**"), text("\n\n".join(rows))]
 
     if not subsidies:
         children.append(text("本日は掲載できる案件がありませんでした。"))
