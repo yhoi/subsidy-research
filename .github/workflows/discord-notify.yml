@@ -4,13 +4,13 @@ name: Discord通知
 # このワークフローは「溜まった latest.json を定期的にDiscordへ送るだけ」を担う。
 # 送信をGitHub側に置くことで、ローカルPCが落ちていてもWiFiが無くても通知は必ず出る。
 #
-# 注意: cron は UTC。21:30 UTC = 翌日 6:30 JST。
+# 注意: cron は UTC。00:00 UTC = 同日 9:00 JST。
 # GitHub の scheduled workflow は混雑時に数十分遅れることがある（時刻厳密ではない）。
 
 on:
   schedule:
-    # 毎週月曜 6:30 JST（= 日曜 21:30 UTC）
-    - cron: "30 21 * * 0"
+    # 毎週月曜 9:00 JST（= 月曜 00:00 UTC）
+    - cron: "0 0 * * 1"
   workflow_dispatch:
     inputs:
       clear_new:

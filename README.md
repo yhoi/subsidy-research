@@ -6,8 +6,8 @@
 
 ## 何をするもの？
 
-- **調査はローカルで毎日 6:30 JST**（launchd）。Web検索で新規案件を探し、既存案件の締切・公募状況を再確認して `reports/latest.json` を更新し続ける
-- **送信は GitHub Actions で毎週月曜 6:30 JST**。溜まった `latest.json` を Discord に送るだけ
+- **調査はローカルで毎日 4:00 JST**（launchd）。Web検索で新規案件を探し、既存案件の締切・公募状況を再確認して `reports/latest.json` を更新し続ける
+- **送信は GitHub Actions で毎週月曜 9:00 JST**。溜まった `latest.json` を Discord に送るだけ
 - 掲載URLの死活確認（リンク切れは正しいURLを探し直し、見つからなければ「URL不明」と明記して残す）
 - 前回結果との差分（新規 / 更新 / 終了 / スコープ外）をレポート化
 - **Discordに自動通知**（締切間近・関連度「高」・新規発見）
@@ -59,17 +59,27 @@
 
 ## 仕組み
 
+**調査と送信を分けているのが要点です。**
+
 ```
-GitHub Actions（毎日 21:30 UTC = 6:30 JST）
-   └─ .github/workflows/research.yml
-        ├─ 月曜以外 … claude -p ← prompts/daily-refresh-prompt.md
-        │              既存案件の状態だけ更新 → latest.json を push（通知なし）
-        └─ 月曜     … claude -p ← prompts/research-prompt.md
-                       新規探索・URL死活確認・差分検知
-                       → reports/ を push → 同ジョブ内で Discord 通知
+[調査] ローカル launchd（毎日 4:00 JST）
+   └─ scripts/run-research.sh
+        └─ claude -p ← prompts/research-prompt.md
+             ├─ Web検索・URL死活確認・差分検知
+             └─ reports/ を更新して git push（通知は出ない）
+
+[送信] GitHub Actions（毎週月曜 9:00 JST）
+   └─ .github/workflows/discord-notify.yml
+        └─ scripts/notify_discord.py --clear-new
+             ├─ reports/latest.json を読んで Discord へ1通
+             └─ 送れたら「新規」フラグを落として push
 ```
 
-ローカル実行（`scripts/run-research.sh`）は手動フォールバックとして残してあります。
+調査をローカルに置いているのは、**Claude のトークン消費をサブスクリプション枠で賄うため**です。
+送信を GitHub 側に置いているのは、**ローカルPCが落ちていてもWiFiが無くても通知を落とさないため**です。
+
+「新規」件数は、前回の通知から今日までに見つかった分が `new_this_survey` として**溜まっていく**設計です。
+ローカルの調査はフラグを積むだけで外しません。外すのは送信できた時点で GitHub Actions 側が行います。
 
 ## ディレクトリ構成
 
@@ -100,7 +110,7 @@ gh secret set DISCORD_WEBHOOK_URL --repo <owner>/<repo>
 # 2. 調査をローカルで手動実行して動作確認
 ./scripts/run-research.sh
 
-# 3. 調査の定期実行を登録（macOS / launchd・毎日 6:30）
+# 3. 調査の定期実行を登録（macOS / launchd・毎日 4:00）
 sed "s|__REPO_DIR__|$(pwd)|g" launchd/com.yhoi.subsidy-research.plist.sample \
   > ~/Library/LaunchAgents/com.yhoi.subsidy-research.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yhoi.subsidy-research.plist

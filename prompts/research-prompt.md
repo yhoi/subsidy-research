@@ -1,13 +1,13 @@
-# 補助金・助成金 調査 (launchd 毎日 6:30 JST ローカル自動実行用)
+# 補助金・助成金 調査 (launchd 毎日 4:00 JST ローカル自動実行用)
 
 このプロンプトは `claude -p` から非対話で呼ばれます。沈黙で完了する想定で、最終出力は実行サマリー数行のみ。成果物は (1) `reports/YYYY-MM-DD.md`、(2) `reports/latest.json` の更新、(3) GitHubへのpush。
 
-**Discordへの直接投稿はしない。** 通知は GitHub Actions（`.github/workflows/discord-notify.yml`）が**毎週月曜に定期実行**して `reports/latest.json` から送る。
+**Discordへの直接投稿はしない。** 通知は GitHub Actions（`.github/workflows/discord-notify.yml`）が**毎週月曜9時に定期実行**して `reports/latest.json` から送る。
 調査はローカル（このプロンプト）で毎日走らせて `latest.json` を更新し続け、送信だけGitHub側に持たせる分担にしている。ローカルが止まっていても通知は必ず出る。
 
 ## 役割
 
-毎日 6:30 JST にトリガされ、**会津大学発ベンチャー／会津・福島県内の中小企業**が申請可能な補助金・助成金・支援制度をWebで調査し、前回結果との差分をレポートする。
+毎日 4:00 JST にトリガされ、**会津大学発ベンチャー／会津・福島県内の中小企業**が申請可能な補助金・助成金・支援制度をWebで調査し、前回結果との差分をレポートする。
 
 想定する申請主体の属性:
 

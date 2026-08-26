@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  毎日 6:30 JST に調査を実行する launchd 定義のサンプル。
-  Discordへの通知はGitHub Actions側（毎週月曜）が担当する。
+  毎日 4:00 JST に調査を実行する launchd 定義のサンプル。
+  Discordへの通知はGitHub Actions側（毎週月曜9時）が担当する。
   __REPO_DIR__ をこのリポジトリの絶対パスに置換してから
   ~/Library/LaunchAgents/ へ配置する。手順は README を参照。
 -->
@@ -21,9 +21,9 @@
 	<key>StartCalendarInterval</key>
 	<dict>
 		<key>Hour</key>
-		<integer>6</integer>
+		<integer>4</integer>
 		<key>Minute</key>
-		<integer>30</integer>
+		<integer>0</integer>
 	</dict>
 
 	<!-- 読み込み時には走らせない（起動のたびに調査が動くのを防ぐ） -->
