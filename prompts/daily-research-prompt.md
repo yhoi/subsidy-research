@@ -62,10 +62,15 @@
 
 ### Step 6. latest.json の更新
 
-**スキーマは現状維持（Actions が読むため）:**
+**スキーマの正は `docs/latest-json.md`。項目名を勝手に変えない**（`scripts/notify_discord.py` が読むため）。
 
 - トップレベル: `survey_date` / `company` / `subsidies` / `notes`
-- 各案件: `id`, `name`, `authority`, `region`, `summary`, `amount`, `deadline` (ISO日付 or null), `deadline_note`, `url`, `url_verified`, `relevance` (高/中/低), `relevance_reason`, `status`, `category`
+- 各案件: `id`, `name`, `authority`, `region`, `summary`, `amount`, `subsidy_rate`, `deadline` (ISO日付 or null), `deadline_note`, `url`, `url_verified`, `relevance` (高/中/低), `relevance_reason`, `status`, `category`
+- **`amount`（補助額）と `subsidy_rate`（補助率）はこの調査の主役**。通知の一番目立つ位置に出るので、必ず公式情報で埋める。
+  - `amount` 例: `上限500万円`、`100万〜1,000万円`
+  - `subsidy_rate` 例: `2/3以内`、`1/2（小規模事業者は2/3）`、`定額`
+  - 公募要領に記載がない・確認できない場合のみ `記載なし` とし、`deadline_note` か `notes` に「補助率要確認」と残して翌日の宿題にする
+- `id` は日をまたいで**変えない**（差分検知の軸）
 - **新規案件のみ** `new_this_survey: true` を付ける。**前回の new_this_survey は必ず全て外す**（Discord通知の「新規」件数がこのフラグで決まる）
 - 終了した案件は `subsidies` から削除（レポート側に「終了」として記録を残す）
 
@@ -75,8 +80,8 @@
 
 1. ヘッダ（調査日時 / 調査対象地域 / 掲載件数（新規X・更新Y・終了Z）/ URL死活確認の要約）
 2. `## 📊 前回（YYYY-MM-DD）からの差分` — 🆕新規 / 🔄更新 / ✅終了 / 📋Watch項目の確認結果 / 📎調査したが掲載を見送った案件
-3. `## ⚠️ 終了間近（申請期限2週間以内）` — 期限・残日数・補助金名・関連度・補助額のテーブル
-4. `## 🎯 関連度「高」の補助金（優先度順）` — 各案件の詳細（管轄/概要/補助額/期限/URL/理由）
+3. `## ⚠️ 終了間近（申請期限2週間以内）` — 期限・残日数・補助金名・関連度・**補助額・補助率**のテーブル
+4. `## 🎯 関連度「高」の補助金（優先度順）` — 各案件の詳細（管轄/概要/**補助額・補助率**/期限/URL/理由）
 5. 関連度「中」「低」は一覧表でよい
 
 ### Step 8. GitHubにpush

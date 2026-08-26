@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""reports/latest.json を読み、日次調査の結果を Discord に通知する。
+
+GitHub Actions（.github/workflows/discord-notify.yml）から呼ばれる。
+入出力の契約:
+  - 入力: reports/latest.json（スキーマは docs/latest-json.md）
+  - 環境変数: DISCORD_WEBHOOK_URL
+  - 引数: 当日のレポートファイルパス（日付の取得にのみ使う）
+方針:
+  - **通知は必ず1メッセージ**。連投すると通知が読まれなくなるため、
+    件数が多い場合は詳細表示を絞り、残りは一覧行に落とす。
+Discordの制約（components v2）:
+  - 1メッセージあたりテキスト合計4000字 / コンポーネント総数40 が上限
+  - チャンネルWebhookでも style=5（リンク）ボタンは送れる（?with_components=true が必要）
+"""
+
+from __future__ import annotations
+
+import datetime as dt
+import json
+import os
+import sys
+import unicodedata
+import urllib.error
+import urllib.request
+
+WEBHOOK = os.environ["DISCORD_WEBHOOK_URL"]
+LATEST_JSON = "reports/latest.json"
+
+IS_COMPONENTS_V2 = 1 << 15
+CONTAINER, SECTION, TEXT, SEPARATOR, BUTTON = 17, 9, 10, 14, 2
+LINK_STYLE = 5
+
+ACCENT_URGENT = 0xE74C3C   # 締切間近
+ACCENT_HIGH = 0x2E86DE     # 関連度「高」
+ACCENT_NEW = 0x27AE60      # 新規発見
+
+MAX_DETAIL_ITEMS = 5      # ボタン付きで詳細表示する上限
+MAX_LIST_ITEMS = 8        # 一覧行で流す上限
+TEXT_BUDGET = 3600        # components v2 のテキスト合計上限4000に対する安全域
+
+
+# --- latest.json の読み取り ---------------------------------------------------
+
+def load(today: dt.date) -> list[dict]:
+    with open(LATEST_JSON, encoding="utf-8") as f:
+        subsidies = json.load(f).get("subsidies", [])
+    for s in subsidies:
+        s["_days_left"] = days_left(s, today)
+    return subsidies
+
+
+def days_left(s: dict, today: dt.date) -> int | None:
+    try:
+        return (dt.date.fromisoformat(s["deadline"]) - today).days
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
+def by_deadline(s: dict) -> int:
+    return s["_days_left"] if s["_days_left"] is not None else 9999
+
+
+# --- 表示ヘルパ ---------------------------------------------------------------
+
+def width(text: str) -> int:
+    """全角を2桁として数えた表示幅。"""
+    return sum(2 if unicodedata.east_asian_width(c) in "WF" else 1 for c in text)
+
+
+def pad(text: str, cells: int, gap: int = 2) -> str:
+    """列幅 cells に収めたうえで、右側に必ず gap 分の余白を残す。"""
+    text = clip(text, cells - gap)
+    return text + " " * max(gap, cells - width(text))
+
+
+def clip(text: str, cells: int) -> str:
+    out = ""
+    for c in text:
+        if width(out) + (2 if unicodedata.east_asian_width(c) in "WF" else 1) > cells:
+            return out[:-1] + "…" if out else ""
+        out += c
+    return out
+
+
+def deadline_label(s: dict) -> str:
+    d = s["_days_left"]
+    if s.get("deadline") and d is not None:
+        if d < 0:
+            return f"{s['deadline']}（超過）"
+        return f"{s['deadline']}（残{d}日）"
+    note = (s.get("deadline_note") or "").split("。")[0]
+    return clip(note, 40) if note else "未定"
+
+
+def money_line(s: dict) -> str:
+    """金額と補助率。この2つがこの通知の主役。"""
+    amount = clip(s.get("amount") or "記載なし", 56)
+    rate = clip(s.get("subsidy_rate") or "記載なし", 40)
+    return f"💰 **{amount}**\n📊 補助率 **{rate}**"
+
+
+# --- コンポーネント構築 -------------------------------------------------------
+
+def text(content: str) -> dict:
+    return {"type": TEXT, "content": content}
+
+
+def separator() -> dict:
+    return {"type": SEPARATOR, "divider": True, "spacing": 1}
+
+
+def item_section(s: dict) -> dict:
+    """1案件 = 1セクション。公式サイトはリンクボタンで開かせる。"""
+    lines = [
+        f"**{clip(s.get('name') or '(名称不明)', 90)}**",
+        money_line(s),
+        f"⏳ 締切 {deadline_label(s)}",
+    ]
+    meta = [v for v in (s.get("authority"), s.get("region"), s.get("status")) if v]
+    if meta:
+        lines.append("🏛 " + clip("　/　".join(meta), 70))
+
+    block = {"type": SECTION, "components": [text("\n".join(lines))]}
+    if s.get("url") and s.get("url_verified"):
+        block["accessory"] = {
+            "type": BUTTON,
+            "style": LINK_STYLE,
+            "label": "公式サイト",
+            "url": s["url"],
+        }
+    else:
+        # ボタンを付けられない場合もURLは本文に残す（リンク切れは明記）
+        block["components"][0]["content"] += (
+            f"\n🔗 {s['url']}（要確認）" if s.get("url") else "\n🔗 URL不明"
+        )
+    return block
+
+
+def deadline_table(items: list[dict]) -> str:
+    """締切間近の一覧。等幅コードブロックで簡易テーブルにする。"""
+    rows = [f"{pad('締切', 13)}{pad('残', 6)}{pad('補助率', 12)}補助金"]
+    rows.append("─" * 48)
+    for s in items:
+        d = s["_days_left"]
+        rows.append(
+            pad(s.get("deadline") or "未定", 13)
+            + pad(f"{d}日" if d is not None else "-", 6)
+            + pad(s.get("subsidy_rate") or "-", 12)
+            + clip(s.get("name") or "", 30)
+        )
+    return "```\n" + "\n".join(rows) + "\n```"
+
+
+def list_line(s: dict) -> str:
+    """ボタンを付けない案件の2行表示。名称を優先し、金額・補助率・締切を下段に置く。"""
+    rate = s.get("subsidy_rate") or "記載なし"
+    parts = [f"💰 {clip(s.get('amount') or '記載なし', 30)}"]
+    if rate != "記載なし":
+        parts.append(f"📊 {clip(rate, 20)}")
+    parts.append(f"⏳ {clip(deadline_label(s), 26)}")
+    return f"**{clip(s.get('name') or '', 46)}**\n-# " + "　".join(parts)
+
+
+# --- 送信 ---------------------------------------------------------------------
+
+def send(children: list[dict], accent: int) -> None:
+    payload = {
+        "flags": IS_COMPONENTS_V2,
+        "components": [{"type": CONTAINER, "accent_color": accent, "components": children}],
+        "allowed_mentions": {"parse": []},
+    }
+    req = urllib.request.Request(
+        WEBHOOK + "?with_components=true",
+        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json", "User-Agent": "subsidy-research-bot"},
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            print(f"discord: {resp.status}")
+    except urllib.error.HTTPError as e:
+        print(f"discord error {e.code}: {e.read().decode()}", file=sys.stderr)
+        raise
+
+
+def total_text(children: list[dict]) -> int:
+    return sum(len(c.get("content", "")) for c in walk(children))
+
+
+def walk(children: list[dict]):
+    for c in children:
+        yield c
+        yield from walk(c.get("components", []))
+
+
+def main(report_path: str) -> None:
+    date = os.path.basename(report_path).replace(".md", "")
+    today = dt.date.fromisoformat(date)
+    subsidies = load(today)
+
+    new_items = [s for s in subsidies if s.get("new_this_survey")]
+    urgent = sorted(
+        [s for s in subsidies if s["_days_left"] is not None and 0 <= s["_days_left"] <= 14],
+        key=by_deadline,
+    )
+    high = sorted([s for s in subsidies if s.get("relevance") == "高"], key=by_deadline)
+
+    # 詳細（ボタン付き）は「締切間近 → 関連度高 → 新規」の優先順で上位のみ
+    detail: list[dict] = []
+    for s in urgent + high + new_items:
+        if s not in detail:
+            detail.append(s)
+    detail, overflow = detail[:MAX_DETAIL_ITEMS], detail[MAX_DETAIL_ITEMS:]
+
+    children: list[dict] = [
+        text(
+            "## 📋 補助金・助成金 日次調査\n"
+            f"-# {date}　会津大学発ベンチャー / 会津・福島・東北・DeepTech・全国中小企業"
+        ),
+        text(
+            f"🆕 新規 **{len(new_items)}**　"
+            f"📌 掲載中 **{len(subsidies)}**　"
+            f"⚠️ 締切2週間以内 **{len(urgent)}**　"
+            f"⭐ 関連度「高」 **{len(high)}**"
+        ),
+    ]
+
+    if urgent:
+        children += [separator(), text("**⚠️ 締切間近（2週間以内）**"), text(deadline_table(urgent))]
+
+    if detail:
+        children.append(separator())
+        children.append(text("**⭐ 優先して見るべき案件**"))
+        for s in detail:
+            children.append(item_section(s))
+
+    if overflow:
+        rows = [list_line(s) for s in overflow[:MAX_LIST_ITEMS]]
+        if len(overflow) > MAX_LIST_ITEMS:
+            rows.append(f"-# ほか {len(overflow) - MAX_LIST_ITEMS} 件（詳細はレポート参照）")
+        children += [separator(), text("**📎 その他の注目案件**\n" + "\n".join(rows))]
+
+    if not subsidies:
+        children.append(text("本日は掲載できる案件がありませんでした。"))
+
+    # テキスト超過時は末尾（重要度の低い順）から削る
+    while total_text(children) > TEXT_BUDGET and len(children) > 3:
+        children.pop()
+        children.append(text("-# ※ 件数が多いため一部を省略しています"))
+        if total_text(children) > TEXT_BUDGET:
+            children.pop()
+
+    accent = ACCENT_URGENT if urgent else (ACCENT_HIGH if high else ACCENT_NEW)
+    send(children, accent)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1])
