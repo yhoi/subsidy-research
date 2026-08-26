@@ -1,0 +1,97 @@
+name: 補助金調査
+
+# 平日夜のローカルPCに依存せず、GitHub側で定期実行する。
+#   毎日 6:30 JST … 既存案件の情報だけを更新（latest.json のみ・通知なし）
+#   毎週月曜      … 本調査（新規探索＋レポート作成＋Discord通知）
+#
+# 注意: cron は UTC。21:30 UTC = 翌日 6:30 JST。
+# GitHub の scheduled workflow は混雑時に数十分遅れることがある（時刻厳密ではない）。
+
+on:
+  schedule:
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 実行モード（auto=曜日で判定）
+        type: choice
+        options: [auto, daily, weekly]
+        default: auto
+
+permissions:
+  contents: write
+
+concurrency:
+  group: research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # 通知の要否を HEAD~1 との差分で判定するため2コミット分必要
+          fetch-depth: 2
+
+      - name: 実行モードと日付を決める
+        id: ctx
+        env:
+          INPUT_MODE: ${{ inputs.mode }}
+        run: |
+          MODE="${INPUT_MODE:-auto}"
+          if [ "$MODE" = "auto" ]; then
+            # JSTの曜日で判定（1=月曜）
+            if [ "$(TZ=Asia/Tokyo date +%u)" = "1" ]; then MODE=weekly; else MODE=daily; fi
+          fi
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "today=$(TZ=Asia/Tokyo date +%F)" >> "$GITHUB_OUTPUT"
+          echo "実行モード: $MODE（JST $(TZ=Asia/Tokyo date '+%F %H:%M %a')）"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Claude Code をインストール
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: 調査を実行
+        env:
+          # Max/Proサブスクリプションのトークン。API従量課金は発生しない。
+          # 発行: ローカルで `claude setup-token`
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.ctx.outputs.mode }}" = "weekly" ]; then
+            PROMPT_FILE=prompts/weekly-research-prompt.md
+          else
+            PROMPT_FILE=prompts/daily-refresh-prompt.md
+          fi
+          echo "プロンプト: $PROMPT_FILE"
+
+          # プロンプト側が git commit / push まで行う
+          git config user.name "yhoi"
+          git config user.email "ddmmmktennis@gmail.com"
+
+          claude -p "$(cat "$PROMPT_FILE")" \
+            --allowedTools "WebSearch,WebFetch,Read,Write,Edit,Glob,Grep,Bash"
+
+      - name: 今回レポートが作られたか確認
+        id: report
+        run: |
+          REPORT="reports/${{ steps.ctx.outputs.today }}.md"
+          # 直近のコミットでレポートが追加/更新された時だけ通知する。
+          # 冪等スキップで何もコミットされなかった場合は通知しない。
+          if git diff --name-only HEAD~1 HEAD -- "$REPORT" | grep -q .; then
+            echo "file=$REPORT" >> "$GITHUB_OUTPUT"
+          else
+            echo "file=" >> "$GITHUB_OUTPUT"
+            echo "レポートの新規作成なし → 通知しない"
+          fi
+
+      - name: Discordに通知
+        if: steps.ctx.outputs.mode == 'weekly' && steps.report.outputs.file != ''
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python3 scripts/notify_discord.py "${{ steps.report.outputs.file }}"

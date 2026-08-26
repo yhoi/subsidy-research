@@ -1,4 +1,4 @@
-# 補助金・助成金 週次調査 (launchd 毎週月曜 6:30 JST 自動実行用)
+# 補助金・助成金 週次調査 (GitHub Actions 毎週月曜 6:30 JST 自動実行用)
 
 このプロンプトは `claude -p` から非対話で呼ばれます。沈黙で完了する想定で、最終出力は実行サマリー数行のみ。成果物は (1) `reports/YYYY-MM-DD.md`、(2) `reports/latest.json` の更新、(3) GitHubへのpush。
 

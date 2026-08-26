@@ -6,8 +6,8 @@
 
 ## 何をするもの？
 
-- 毎週月曜 **6:30 JST** に自動起動
-- Web検索で新規案件を探し、既存案件の締切・公募状況を再確認
+- **毎日 6:30 JST**: 既存案件の締切・公募状況だけを追従（`latest.json` のみ更新・通知なし）
+- **毎週月曜 6:30 JST**: 新規案件を探索して棚卸しし、レポートを作成して Discord に通知
 - 掲載URLの死活確認（リンク切れは正しいURLを探し直し、見つからなければ「URL不明」と明記して残す）
 - 前回結果との差分（新規 / 更新 / 終了 / スコープ外）をレポート化
 - **Discordに自動通知**（締切間近・関連度「高」・新規発見）
@@ -60,26 +60,33 @@
 ## 仕組み
 
 ```
-launchd（毎週月曜6:30 JST）
-   └─ scripts/run-daily-research.sh
-        └─ claude -p  ←  prompts/daily-research-prompt.md
-             ├─ Web検索・URL死活確認・差分検知
-             └─ reports/ を更新して git push
-                  └─ GitHub Actions → Discord Webhook 通知
+GitHub Actions（毎日 21:30 UTC = 6:30 JST）
+   └─ .github/workflows/research.yml
+        ├─ 月曜以外 … claude -p ← prompts/daily-refresh-prompt.md
+        │              既存案件の状態だけ更新 → latest.json を push（通知なし）
+        └─ 月曜     … claude -p ← prompts/weekly-research-prompt.md
+                       新規探索・URL死活確認・差分検知
+                       → reports/ を push → 同ジョブ内で Discord 通知
 ```
+
+ローカル実行（`scripts/run-weekly-research.sh`）は手動フォールバックとして残してあります。
 
 ## ディレクトリ構成
 
 ```
-prompts/daily-research-prompt.md   # エージェントに渡す調査手順
+prompts/
+  ├── weekly-research-prompt.md    # 週次の本調査（新規探索＋レポート）
+  └── daily-refresh-prompt.md      # 日次のリフレッシュ（latest.json のみ）
 scripts/
-  ├── run-daily-research.sh        # launchdから呼ばれる実行スクリプト
+  ├── run-weekly-research.sh       # 手動実行用（ローカル）
   └── notify_discord.py            # latest.json → Discord通知の組み立て
 reports/
   ├── latest.json                  # 最新の調査結果（差分検知の基準）
   └── YYYY-MM-DD.md                # 調査レポート
 docs/latest-json.md                # latest.json のスキーマ定義
-.github/workflows/discord-notify.yml  # push検知で notify_discord.py を実行
+.github/workflows/
+  ├── research.yml                 # 定期実行の本体（日次／週次）
+  └── discord-notify.yml           # ローカルからpushした時の通知（フォールバック）
 logs/                              # 実行ログ（git管理外）
 ```
 
@@ -91,20 +98,34 @@ logs/                              # 実行ログ（git管理外）
 前提: [Claude Code](https://claude.com/claude-code) の `claude` コマンドと `gh` CLI が使えること。
 
 ```sh
-# 1. Discord Webhook を Secrets に登録
+# 1. Claude Code の CI用トークンを発行（Max/Proサブスクを使うのでAPI従量課金は発生しない）
+claude setup-token
+gh secret set CLAUDE_CODE_OAUTH_TOKEN --repo <owner>/<repo>
+
+# 2. Discord Webhook を登録
 gh secret set DISCORD_WEBHOOK_URL --repo <owner>/<repo>
 
-# 2. 手動実行して動作確認（先にこれで通ることを確かめる）
-./scripts/run-daily-research.sh
+# 3. 手動で1回まわして動作確認
+gh workflow run 補助金調査 -f mode=daily     # 日次リフレッシュだけ試す
+gh workflow run 補助金調査 -f mode=weekly    # 本調査＋通知まで試す
+gh run watch
+```
 
-# 3. 定期実行を登録（macOS / launchd）
+定期実行は `.github/workflows/research.yml` の `schedule` で動くため、**ローカルPCの起動やWiFiに依存しません**。
+
+<details>
+<summary>ローカルで定期実行したい場合（launchd・任意）</summary>
+
+```sh
 sed "s|__REPO_DIR__|$(pwd)|g" launchd/com.yhoi.subsidy-research.plist.sample \
   > ~/Library/LaunchAgents/com.yhoi.subsidy-research.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.yhoi.subsidy-research.plist
-
-# 登録できたか確認
 launchctl list | grep subsidy-research
 ```
+
+GitHub Actions と併用すると二重に走るので、**どちらか一方にしてください**。
+
+</details>
 
 ## メモ
 
@@ -113,4 +134,5 @@ launchctl list | grep subsidy-research
 - 各案件の「公式サイト」ボタンは、URLの死活確認に成功した案件にのみ付きます
 - 同日中に再実行しても、その日のレポートが既にあれば何もしません（冪等）
 - 同じ日のレポートを作り直したい場合は、**作業ツリーから消すだけでは足りません**。コミット済みだとエージェントが事故と判断して `git checkout` で復元するため、`git rm reports/YYYY-MM-DD.md` してコミットしてから実行してください
-- `prompts/` と `scripts/` のファイル名が `daily-` で始まるのは日次運用だった名残です（現在は週次）
+- GitHub Actions 内から `GITHUB_TOKEN` で push しても他のワークフローは起動しません（ループ防止のGitHub仕様）。このため週次の通知は `research.yml` の中で直接送っています
+- scheduled workflow は**リポジトリに60日間活動がないと自動停止**します。日次実行でコミットが入るため通常は問題ありません

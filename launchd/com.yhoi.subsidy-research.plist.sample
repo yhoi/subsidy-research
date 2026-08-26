@@ -13,7 +13,7 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>/bin/zsh</string>
-		<string>__REPO_DIR__/scripts/run-daily-research.sh</string>
+		<string>__REPO_DIR__/scripts/run-weekly-research.sh</string>
 	</array>
 
 	<!-- Weekday 1 = 月曜。システムのタイムゾーンで解釈される -->
