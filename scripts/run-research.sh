@@ -29,6 +29,24 @@ CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude || echo "${HOME}/.local/bin/claude
     exit 1
   fi
 
+  # ネットワーク疎通待ち
+  # 早朝の起動時はスリープ復帰直後でWiFiが未接続のことがあり、そのまま実行すると
+  # ENOTFOUND で即死する（2026-08-27〜29に3日連続で発生）。
+  # 最大30分（30秒×60回）待ち、それでも繋がらなければ調査せず終了する。
+  ONLINE=0
+  for i in $(seq 1 60); do
+    if curl -sS -o /dev/null --max-time 10 https://api.anthropic.com/ 2>/dev/null; then
+      ONLINE=1
+      [[ $i -gt 1 ]] && echo "network ready after $(( (i - 1) * 30 ))s"
+      break
+    fi
+    sleep 30
+  done
+  if [[ ${ONLINE} -ne 1 ]]; then
+    echo "ERROR: 30分待ってもネットワークに到達できませんでした。調査をスキップします。"
+    exit 1
+  fi
+
   PROMPT="$(cat "${PROMPT_FILE}")"
   cd "${SR_DIR}"
   echo "$PROMPT" | "${CLAUDE_BIN}" -p --output-format text
