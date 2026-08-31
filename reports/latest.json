@@ -85,8 +85,7 @@
       "relevance": "中",
       "relevance_reason": "会津若松市内の事業者が直接の対象で補助率2/3と好条件。自社オフィスのLED・空調・EMS更新に使えるが、設備投資が前提で事業開発には使えない",
       "status": "公募中",
-      "category": "会津地域",
-      "new_this_survey": true
+      "category": "会津地域"
     },
     {
       "id": "fukushima-seisansei-2026",
@@ -171,8 +170,7 @@
       "relevance": "中",
       "relevance_reason": "県内中小企業なら業種を問わず使え、展示会出展という具体的な用途にそのままはまる。ただし今年度の受付は現時点で終了しており次回待ち",
       "status": "次回公募待ち",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-kanzei-bukka-2026",
@@ -189,8 +187,7 @@
       "relevance": "低",
       "relevance_reason": "本社・事業所とも県内にある中小企業が対象で補助率2/3と条件は良いが、令和7年4月以降の任意1か月の売上高・売上総利益・営業利益のいずれかが前年同期比5%以上減少していることが必須要件のため、該当しなければ申請できない",
       "status": "公募中",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-josei-office-2026",
@@ -207,8 +204,7 @@
       "relevance": "中",
       "relevance_reason": "情報通信業が明示的に対象で、会津若松市内でのオフィス増設と採用に直接使える。ただし操業5年以上という要件があり、設立間もないベンチャーは対象外",
       "status": "公募中（通年）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     }
   ],
   "notes": [
