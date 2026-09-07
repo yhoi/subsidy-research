@@ -221,8 +221,7 @@
       "relevance": "中",
       "relevance_reason": "情報サービス業が明示的に対象で、会津若松市内でのオフィス新設・増設と2人以上の新規雇用があれば中小企業は賃借料の1/2が対象。オフィス拡張のタイミングと合えば有効だが、雇用要件と1年経過後の申請という時間軸に注意",
       "status": "公募中（通年）",
-      "category": "会津地域",
-      "new_this_survey": true
+      "category": "会津地域"
     },
     {
       "id": "fukushima-rtf-jissho-2026",
@@ -239,8 +238,7 @@
       "relevance": "低",
       "relevance_reason": "県内中小企業なら申請できるが、用途がロボットテストフィールドの施設使用料に限定され金額も小さい。ドローン・ロボットの屋外実証を計画する場合にのみ有効",
       "status": "公募中（随時）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-robot-kiban-2026",
@@ -257,8 +255,7 @@
       "relevance": "低",
       "relevance_reason": "県内に本社があれば地域要件は満たし補助率3/4と条件は良いが、ロボット要素技術の開発・実証が対象で、AIソフトウェア主体の事業には使途が限られる。知能・制御系の開発として組めるなら中に上がる",
       "status": "公募終了（次回待ち）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     }
   ],
   "notes": [
