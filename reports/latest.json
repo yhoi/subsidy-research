@@ -272,8 +272,7 @@
       "relevance": "低",
       "relevance_reason": "県内に事業所を持つ雇用保険適用事業所なら対象だが、事前に県の企業認証取得が必要で、金額も小さい。人事制度整備の副次的な財源として。",
       "status": "公募中（通年）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-hatarakiyasui-2026",
@@ -290,8 +289,7 @@
       "relevance": "低",
       "relevance_reason": "県内企業が申請主体になれるが、県の企業認証取得が前提。オフィス改革枠は上限200万円・3/4と条件がよく、拠点整備時に検討価値がある。",
       "status": "公募開始待ち",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-kaigai-shutsugan-2026",
@@ -308,8 +306,7 @@
       "relevance": "中",
       "relevance_reason": "会津大学発ベンチャーが自社技術の知財を海外展開する場合に直接使える。既に掲載中の「特許等調査・出願経費助成事業（国内出願・先行技術調査）」と対をなす制度で、国内出願を今年度中に進めれば来年度の海外出願助成につなげられる。今年度公募は終了済みのため、当面は準備フェーズの制度として監視する。",
       "status": "公募終了（次回待ち）",
-      "category": "知的財産",
-      "new_this_survey": true
+      "category": "知的財産"
     },
     {
       "id": "fukushima-kenkoudukuri-2026",
@@ -326,8 +323,7 @@
       "relevance": "低",
       "relevance_reason": "設備投資や研究開発ではなく労務・健康経営の取組に対する定額奨励金で、事業開発への寄与は限定的。ただし要件が健康事業所宣言とセミナー受講のみで少人数の事業者でも満たしやすく、既掲載の「企業の魅力アップ奨励金」と同様に労務面の制度整備とあわせて取得を検討できる。",
       "status": "公募中",
-      "category": "雇用・労務",
-      "new_this_survey": true
+      "category": "雇用・労務"
     },
     {
       "id": "fukushima-venture-award-2026",
@@ -344,8 +340,7 @@
       "relevance": "中",
       "relevance_reason": "2017-04-01以降に県内で起業した法人が応募でき、会津大学発ベンチャーの設立時期と合致すれば対象。賞金は小額だが、県主催の審査・メンタリングを通じて県内支援機関との接点が得られる。補助金ではないため関連度は中",
       "status": "公募中",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "inpit-gaikoku-shutsugan-2026-4",
@@ -362,8 +357,7 @@
       "relevance": "中",
       "relevance_reason": "福島県内中小企業が直接申請できる。県の海外出願支援事業が6月で終了した後の年度内の代替枠になる。国内出願済みであることが前提で、現時点で国内出願がなければ対象外",
       "status": "公募中",
-      "category": "広域",
-      "new_this_survey": true
+      "category": "広域"
     },
     {
       "id": "fukushima-sogyo-hojokin-2026",
@@ -380,8 +374,7 @@
       "relevance": "低",
       "relevance_reason": "既存法人は第二創業枠のみ対象で、既存事業と別の新規創業が必要。会津大学発ベンチャーが新事業を別法人で立ち上げる場合に限り使える",
       "status": "公募終了（次回待ち）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-joujou-2026",
@@ -398,8 +391,7 @@
       "relevance": "中",
       "relevance_reason": "福島県内に本社を置く中小企業が申請主体。上場準備の実費を県が半額補助する制度で、会津大学発ベンチャーがIPOを視野に入れる段階になれば直接使える。現時点で上場準備契約がなければ対象経費が発生しないため関連度は中。",
       "status": "公募中（3次受付）",
-      "category": "経営・成長支援",
-      "new_this_survey": true
+      "category": "経営・成長支援"
     },
     {
       "id": "fukushima-sougyou-kigyouyuuchi-14",
@@ -416,8 +408,7 @@
       "relevance": "低",
       "relevance_reason": "会津地域は対象12市町村に含まれない。浜通り12市町村で拠点を新設・事業展開する場合のみ申請可能。",
       "status": "公募中",
-      "category": "設備投資・創業",
-      "new_this_survey": true
+      "category": "設備投資・創業"
     }
   ],
   "notes": [
