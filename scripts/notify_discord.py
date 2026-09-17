@@ -106,6 +106,14 @@ def clear_new_flags() -> int:
     return cleared
 
 
+def is_expired(s: dict, today: dt.date) -> bool:
+    """締切が今日より前、または status が「✅」（終了）で始まる案件。prune_expired.py と同じ基準。"""
+    d = days_left(s, today)
+    if d is not None and d < 0:
+        return True
+    return (s.get("status") or "").strip().startswith("✅")
+
+
 def days_left(s: dict, today: dt.date) -> int | None:
     try:
         return (dt.date.fromisoformat(s["deadline"]) - today).days
@@ -296,7 +304,9 @@ def main(report_path: str | None = None, clear_new: bool = False) -> None:
         send_failure(err, date)
         return
 
-    subsidies = annotate(data["subsidies"], today)
+    # 締切切れは送らない。latest.json 側は prune_expired.py が掃除しているが、
+    # 調査が止まって古いまま日が経つと、ここで初めて締切を過ぎるものが出る。
+    subsidies = annotate([s for s in data["subsidies"] if not is_expired(s, today)], today)
     stale = stale_days(data, today)
 
     new_items = [s for s in subsidies if s.get("new_this_survey")]

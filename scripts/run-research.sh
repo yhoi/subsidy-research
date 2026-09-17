@@ -49,8 +49,22 @@ CLAUDE_BIN="${CLAUDE_BIN:-$(command -v claude || echo "${HOME}/.local/bin/claude
 
   PROMPT="$(cat "${PROMPT_FILE}")"
   cd "${SR_DIR}"
+
+  # 調査前に締切切れを落としておく。プロンプトにも削除ルールはあるが、
+  # Pignet向けbotでLLMが「受付終了」のまま残す事故が続いたので、入力の時点で機械的に消す。
+  python3 scripts/prune_expired.py reports/latest.json
+
   echo "$PROMPT" | "${CLAUDE_BIN}" -p --output-format text
   RC=$?
   echo "===== claude exit=${RC} at $(date '+%Y-%m-%d %H:%M:%S %Z') ====="
+
+  # 調査後にも同じ掃除をかけ、残っていればコミットして押す。ここが最後の砦。
+  python3 scripts/prune_expired.py reports/latest.json
+  if ! git diff --quiet -- reports/latest.json; then
+    git add reports/latest.json
+    git commit -m "chore: 締切切れ・終了済み案件を latest.json から削除" \
+      && git push \
+      || echo "WARN: prune後のcommit/pushに失敗（次回の実行で再試行される）"
+  fi
   exit $RC
 } >> "${RUN_LOG}" 2>&1

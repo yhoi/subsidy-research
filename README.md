@@ -86,6 +86,7 @@
 ```
 prompts/research-prompt.md         # エージェントに渡す調査手順（毎日）
 scripts/
+  ├── prune_expired.py             # 締切切れ・✅終了の案件を latest.json から機械的に削除（調査の前後で実行）
   ├── run-research.sh              # launchdから呼ばれる実行スクリプト
   └── notify_discord.py            # latest.json → Discord通知の組み立て
 reports/
