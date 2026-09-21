@@ -289,8 +289,7 @@
       "relevance": "低",
       "relevance_reason": "県内事業者なら業種を問わず申請可能だが、自社所有・賃借の事業所敷地に太陽光設備を設置する設備投資が前提で、賃貸オフィス拠点のICT系ベンチャーには用途が合いにくい。自社拠点を持つ県内中小企業の電力コスト削減には有効。",
       "status": "公募中",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-sougyou-kigyouyuuchi-14",
@@ -443,8 +442,7 @@
       "relevance": "低",
       "relevance_reason": "会津若松市内の事業者が対象で申請負担は軽いが、商工会議所の会員加入が前提で金額も小さい。デジタル導入支援枠は自社ツール導入用途に限られる。",
       "status": "公募中（予算到達次第終了・残額要確認）",
-      "category": "会津地域",
-      "new_this_survey": true
+      "category": "会津地域"
     },
     {
       "id": "aizu-jisedai-tenjikai-2026",
@@ -461,8 +459,7 @@
       "relevance": "中",
       "relevance_reason": "会津若松市内に拠点を置く中小企業が申請主体。ICT・次世代産業分野の展示会出展が対象になるため、会津大学発ベンチャーの販路開拓と相性がよい。補助上限10万円と小規模だが、出展予定があれば併用しやすい。",
       "status": "公募中（随時・予算到達次第終了）",
-      "category": "会津地域",
-      "new_this_survey": true
+      "category": "会津地域"
     }
   ],
   "notes": [
