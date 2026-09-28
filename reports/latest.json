@@ -476,8 +476,7 @@
       "relevance": "低",
       "relevance_reason": "県内法人なら申請主体になれるが、対象が再エネ設備のメンテナンス業務への参入に限られ、ICT・AI系ベンチャーの主業務とは距離がある。ドローン点検・監視システム等で再エネO&Mに関わる計画がある場合のみ検討対象",
       "status": "公募中（毎月15日締切）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-internship-2026",
@@ -494,8 +493,7 @@
       "relevance": "中",
       "relevance_reason": "県内中小企業なら業種を問わず使え、会津大学等の学生インターン受け入れ・採用活動の費用を補える。金額は小さいが申請負担が軽い",
       "status": "公募中（随時・予算到達次第終了）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-hightech-kaihatsu-shien-2026",
@@ -512,8 +510,7 @@
       "relevance": "低",
       "relevance_reason": "補助金ではなく無償の技術支援。ハードウェア・計測を伴う開発課題があれば会津若松技術支援センター経由で使えるが、ソフトウェア中心の事業では用途が限られる",
       "status": "公募中（随時）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-gyomukaizen-ouen-2026",
@@ -530,8 +527,7 @@
       "relevance": "低",
       "relevance_reason": "福島県内に事業所を持つ中小企業なら申請主体になれる国制度への県上乗せ枠。ただし国の業務改善助成金（事業場内最低賃金の引上げ＋設備投資等）の活用とパートナーシップ構築宣言が前提で、国への申請期限が2026-10-15と近い",
       "status": "公募中",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fukushima-robot-renkei-2026",
@@ -548,8 +544,7 @@
       "relevance": "低",
       "relevance_reason": "県内に拠点を持てば申請主体になれるが、対象は製造業者による複数社連携のユニット試作品開発で、ソフトウェア主体の事業とは距離がある。県内製造業者と組んで知能・制御系を担う場合のみ検討対象",
       "status": "公募中（予算到達次第終了）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     },
     {
       "id": "fbsk-kaigai-hanro-2026-2",
@@ -566,8 +561,7 @@
       "relevance": "低",
       "relevance_reason": "県内企業が会員になれば申請できる。助成率10/10だが上限が年15万円と小さく、県産品の輸出促進が目的のため、ソフトウェア・サービス系の海外展開で対象になるかは要確認",
       "status": "公募中（予算到達次第終了）",
-      "category": "福島県",
-      "new_this_survey": true
+      "category": "福島県"
     }
   ],
   "notes": [
