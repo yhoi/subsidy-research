@@ -527,8 +527,7 @@
       "relevance": "低",
       "relevance_reason": "会津若松市内で創業・設立1年以内に県の創業関連保証付き融資を受ける大学発ベンチャーが対象になり得る。融資利用が前提で、設立1年超の既存法人は対象外",
       "status": "公募中（通年）",
-      "category": "会津地域",
-      "new_this_survey": true
+      "category": "会津地域"
     },
     {
       "id": "fukushima-tokkyo-chousa-shutsugan-2026-3",
@@ -545,8 +544,7 @@
       "relevance": "中",
       "relevance_reason": "会津大学発ベンチャー・県内IT企業が自社技術の特許や商標を国内出願する場合に直接使える。国内出願を済ませておくことが、令和9年度の福島県海外出願支援事業（外国出願助成）の前提にもなる。",
       "status": "公募中",
-      "category": "知的財産",
-      "new_this_survey": true
+      "category": "知的財産"
     },
     {
       "id": "fukushima-fukkou-koyou-yatoiire-2026",
@@ -563,8 +561,7 @@
       "relevance": "低",
       "relevance_reason": "県内全域の中小企業が対象だが、県の産業政策対象事業に該当し、震災後に補助金・融資を受けた設備投資を行った事業所であることが要件。設備投資実績のないソフトウェア系ベンチャーは該当しない可能性が高い。",
       "status": "公募中",
-      "category": "雇用",
-      "new_this_survey": true
+      "category": "雇用"
     }
   ],
   "notes": [
